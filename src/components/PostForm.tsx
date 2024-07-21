@@ -1,7 +1,7 @@
 // src/components/PostForm.tsx
 import { useState, FormEvent } from 'react';
 import { useRecoilState } from 'recoil';
-import { postsState, Post } from '../atoms/postsAtom';
+import { postsState } from '../atoms/postsAtom';
 import { Box, Input, Button, Textarea } from '@chakra-ui/react';
 
 const PostForm = () => {
@@ -9,17 +9,28 @@ const PostForm = () => {
   const [content, setContent] = useState('');
   const [posts, setPosts] = useRecoilState(postsState);
 
-  const handleSubmit = (event: FormEvent<HTMLDivElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const newPost: Post = { 
-      id: Date.now(), 
-      title, 
-      content, 
-      createdAt: new Date()  // 'createdAt' プロパティを追加
-    };
-    setPosts([...posts, newPost]);
-    setTitle('');
-    setContent('');
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, content })
+      });
+      if (!response.ok) throw new Error('Network response was not ok');
+      const savedPost = await response.json();  // バックエンドから返された完全な投稿データを取得
+      console.log("savedPost");
+      console.log(savedPost);
+      console.log("posts");
+      console.log(...posts);
+      setPosts([savedPost, ...posts]);  // 返されたデータを状態に追加
+      setTitle('');
+      setContent('');
+    } catch (error) {
+      console.error('Failed to save the post:', error);
+    }
   };
 
   return (
